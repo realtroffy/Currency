@@ -1,15 +1,16 @@
 package com.idf.currency.service.impl;
 
+import com.idf.currency.exception.NotFoundCurrencyException;
 import com.idf.currency.model.Currency;
 import com.idf.currency.model.User;
 import com.idf.currency.repository.CurrencyRepository;
+import com.idf.currency.service.CurrencyService;
 import com.idf.currency.service.NotifyService;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -18,15 +19,14 @@ import java.util.concurrent.ConcurrentHashMap;
 public class NotifyServiceImpl implements NotifyService {
 
   public static final Set<User> USER_NOTIFY_SET = ConcurrentHashMap.newKeySet();
-  public static final String NO_SUCH_ELEMENT_EXCEPTION_MESSAGE = "Currency not found";
+  public static final String NOT_FOUND_ELEMENT_EXCEPTION_MESSAGE = "Currency not found";
+
   private final CurrencyRepository currencyRepository;
+  private final CurrencyService currencyService;
 
   @Override
   public void addToNotifyList(String username, String symbol) {
-    Currency currency =
-        currencyRepository
-            .findBySymbol(symbol)
-            .orElseThrow(() -> new NoSuchElementException(NO_SUCH_ELEMENT_EXCEPTION_MESSAGE));
+    Currency currency = getCurrencyFromActualSet(symbol);
     User user =
         USER_NOTIFY_SET.stream()
             .filter(usr -> usr.getUsername().equals(username))
@@ -34,6 +34,29 @@ public class NotifyServiceImpl implements NotifyService {
             .orElse(createUser(username, currency));
     user.getCurrencyNotifyMap().put(currency, false);
     USER_NOTIFY_SET.add(user);
+  }
+
+  private Currency getCurrencyFromActualSet(String symbol) {
+    return CurrencyServiceImpl.ACTUAL_CURRENCY_SET.stream()
+        .filter(currency -> currency.getSymbol().equals(symbol))
+        .findFirst()
+        .orElseGet(() -> getCurrencyFromDB(symbol));
+  }
+
+  private Currency getCurrencyFromDB(String symbol) {
+    return currencyRepository.findBySymbol(symbol).orElseGet(() -> getCurrencyFromUrl(symbol));
+  }
+
+  private Currency getCurrencyFromUrl(String symbol) {
+    currencyService.saveCurrency();
+    return CurrencyServiceImpl.ACTUAL_CURRENCY_SET.stream()
+        .filter(currency -> filterCurrencyBySymbol(currency, symbol))
+        .findFirst()
+        .orElseThrow(() -> new NotFoundCurrencyException(NOT_FOUND_ELEMENT_EXCEPTION_MESSAGE));
+  }
+
+  private boolean filterCurrencyBySymbol(Currency currency, String symbol) {
+    return currency.getSymbol().equals(symbol);
   }
 
   private User createUser(String username, Currency currency) {

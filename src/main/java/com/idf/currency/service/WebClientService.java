@@ -1,7 +1,7 @@
 package com.idf.currency.service;
 
-import org.springframework.http.ResponseEntity;
+import reactor.core.publisher.Flux;
 
 public interface WebClientService<T> {
-  ResponseEntity<T> getResponseEntity(String url);
+  Flux<T> getResponse();
 }

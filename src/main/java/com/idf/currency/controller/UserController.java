@@ -19,7 +19,7 @@ import javax.validation.constraints.Size;
 @Validated
 public class UserController {
 
-  private static final String BAD_SYMBOL_MESSAGE = "Bad request. Available currency: BTC, ETH, SOL";
+  private static final String BAD_SYMBOL_MESSAGE = "Available currency: BTC, ETH, SOL";
   private static final String BAD_USER_NAME_MESSAGE =
       "Username length must be between 3 and 20 characters";
   private final ValidationService validationService;
