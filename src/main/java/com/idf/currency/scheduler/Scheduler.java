@@ -3,17 +3,18 @@ package com.idf.currency.scheduler;
 import com.idf.currency.model.Currency;
 import com.idf.currency.model.User;
 import com.idf.currency.service.CurrencyService;
-import com.idf.currency.service.impl.CurrencyServiceImpl;
-import com.idf.currency.service.impl.NotifyServiceImpl;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 import java.text.DecimalFormat;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
+
+import static com.idf.currency.service.impl.CurrencyServiceImpl.ACTUAL_CURRENCY_MAP;
+import static com.idf.currency.service.impl.NotifyServiceImpl.USER_NOTIFY_SET;
 
 @Component
 @Slf4j
@@ -24,19 +25,19 @@ public class Scheduler {
 
   @Scheduled(cron = "0 * * * * ?")
   public void updateCurrencyFromSource() {
-    CurrencyServiceImpl.ACTUAL_CURRENCY_SET.clear();
-    currencyService.saveCurrency();
+    currencyService.saveCurrencyAsync();
   }
 
   @Scheduled(cron = "1 * * * * ?")
   public void notifyUser() {
-    log.info("Start notify users");
-    for (User usr : NotifyServiceImpl.USER_NOTIFY_SET) {
+    for (User usr : USER_NOTIFY_SET) {
       for (Map.Entry<Currency, Boolean> entry : usr.getCurrencyNotifyMap().entrySet()) {
-        for (Currency actualCurrency : CurrencyServiceImpl.ACTUAL_CURRENCY_SET) {
-          double percentDif = actualCurrency.getPriceUsd() / entry.getKey().getPriceUsd();
+        String currencySymbol = entry.getKey().getSymbol();
+        Currency currentCurrency = ACTUAL_CURRENCY_MAP.get(currencySymbol);
+        if (ACTUAL_CURRENCY_MAP.containsKey(currencySymbol)) {
+          double percentDif = currentCurrency.getPriceUsd() / entry.getKey().getPriceUsd();
           if (Boolean.TRUE.equals(
-                  !entry.getValue() && actualCurrency.getId().equals(entry.getKey().getId()))
+                  !entry.getValue() && currentCurrency.getId().equals(entry.getKey().getId()))
               && (percentDif >= 1.01 || percentDif <= 0.99)) {
             log.warn(
                 usr.getUsername()
@@ -51,17 +52,18 @@ public class Scheduler {
     }
   }
 
-  @Scheduled(cron = "5 0 * * * ?")
+  @Scheduled(cron = "2 * * * * ?")
   public void removeNotifiedUsersFromSet() {
-    log.info("Start remove notified users set");
-    Set<User> notNotifiedSet = ConcurrentHashMap.newKeySet();
-    for (User usr : NotifyServiceImpl.USER_NOTIFY_SET) {
-      for (Map.Entry<Currency, Boolean> entry : usr.getCurrencyNotifyMap().entrySet()) {
-        if (Boolean.FALSE.equals(entry.getValue())) {
-          notNotifiedSet.add(usr);
-        }
-      }
+    Set<User> notifiedAlreadySet = new HashSet<>();
+    for (User usr : USER_NOTIFY_SET) {
+      usr.getCurrencyNotifyMap().entrySet().removeIf(entry -> entry.getValue().equals(true));
     }
-    NotifyServiceImpl.USER_NOTIFY_SET.removeIf(user -> !notNotifiedSet.contains(user));
+    USER_NOTIFY_SET.forEach(
+        user -> {
+          if (user.getCurrencyNotifyMap().isEmpty()) {
+            notifiedAlreadySet.add(user);
+          }
+        });
+    USER_NOTIFY_SET.removeAll(notifiedAlreadySet);
   }
 }

@@ -8,30 +8,42 @@ import com.idf.currency.service.WebClientService;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 
-import java.util.HashSet;
-import java.util.Set;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 @Service
 @AllArgsConstructor
 public class CurrencyServiceImpl implements CurrencyService {
 
-    public static final String BODY_NULL_EXCEPTION_MESSAGE = "Array of currencies is null";
-    public static final Set<Currency> ACTUAL_CURRENCY_SET = new HashSet<>();
+  public static final String BODY_NULL_EXCEPTION_MESSAGE = "Array of currencies is null";
+  public static final Map<String, Currency> ACTUAL_CURRENCY_MAP = new HashMap<>();
 
-    private final CurrencyRepository repository;
-    private final WebClientService<?> webClientService;
+  private final CurrencyRepository repository;
+  private final WebClientService<?> webClientService;
 
-    @Override
-    public void saveCurrency() {
+  @Override
+  public void saveCurrencyAsync() {
     webClientService.getResponse().subscribe(currency -> save((Currency) currency));
-    }
+  }
 
-    private void save(Currency currency) {
-        if (currency == null) {
-            throw new BodyNullException(BODY_NULL_EXCEPTION_MESSAGE);
-        } else {
-            repository.save(currency);
-            ACTUAL_CURRENCY_SET.add(currency);
-        }
+  @Override
+  public void saveCurrencySync() {
+    List<Currency> currenciesFromUrl =
+        (List<Currency>) webClientService.getResponse().collectList().block();
+    if (currenciesFromUrl == null) {
+      throw new BodyNullException(BODY_NULL_EXCEPTION_MESSAGE);
+    } else {
+      currenciesFromUrl.forEach(e -> ACTUAL_CURRENCY_MAP.put(e.getSymbol(), e));
     }
+  }
+
+  private void save(Currency currency) {
+    if (currency == null) {
+      throw new BodyNullException(BODY_NULL_EXCEPTION_MESSAGE);
+    } else {
+      repository.save(currency);
+      ACTUAL_CURRENCY_MAP.put(currency.getSymbol(), currency);
+    }
+  }
 }

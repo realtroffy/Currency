@@ -14,6 +14,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
+import static com.idf.currency.service.impl.CurrencyServiceImpl.ACTUAL_CURRENCY_MAP;
+
 @Service
 @AllArgsConstructor
 public class NotifyServiceImpl implements NotifyService {
@@ -37,7 +39,7 @@ public class NotifyServiceImpl implements NotifyService {
   }
 
   private Currency getCurrencyFromActualSet(String symbol) {
-    return CurrencyServiceImpl.ACTUAL_CURRENCY_SET.stream()
+    return ACTUAL_CURRENCY_MAP.values().stream()
         .filter(currency -> currency.getSymbol().equals(symbol))
         .findFirst()
         .orElseGet(() -> getCurrencyFromDB(symbol));
@@ -48,8 +50,8 @@ public class NotifyServiceImpl implements NotifyService {
   }
 
   private Currency getCurrencyFromUrl(String symbol) {
-    currencyService.saveCurrency();
-    return CurrencyServiceImpl.ACTUAL_CURRENCY_SET.stream()
+    currencyService.saveCurrencySync();
+    return ACTUAL_CURRENCY_MAP.values().stream()
         .filter(currency -> filterCurrencyBySymbol(currency, symbol))
         .findFirst()
         .orElseThrow(() -> new NotFoundCurrencyException(NOT_FOUND_ELEMENT_EXCEPTION_MESSAGE));

@@ -1,6 +1,8 @@
 package com.idf.currency.service;
 
-public interface CurrencyService {
+public interface CurrencyService{
 
-   void saveCurrency();
+   void saveCurrencyAsync();
+
+   void saveCurrencySync();
 }
