@@ -8,16 +8,16 @@ import com.idf.currency.service.WebClientService;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 @Service
 @AllArgsConstructor
 public class CurrencyServiceImpl implements CurrencyService {
 
   public static final String BODY_NULL_EXCEPTION_MESSAGE = "Array of currencies is null";
-  public static final Map<String, Currency> ACTUAL_CURRENCY_MAP = new HashMap<>();
+  public static final Map<String, Currency> ACTUAL_CURRENCY_MAP = new ConcurrentHashMap<>();
 
   private final CurrencyRepository repository;
   private final WebClientService<?> webClientService;

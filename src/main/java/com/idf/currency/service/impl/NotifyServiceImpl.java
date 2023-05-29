@@ -9,7 +9,6 @@ import com.idf.currency.service.NotifyService;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -62,7 +61,7 @@ public class NotifyServiceImpl implements NotifyService {
   }
 
   private User createUser(String username, Currency currency) {
-    Map<Currency, Boolean> currencyMap = new HashMap<>();
+    Map<Currency, Boolean> currencyMap = new ConcurrentHashMap<>();
     currencyMap.put(currency, false);
     return new User(username, currencyMap);
   }

@@ -30,40 +30,28 @@ public class Scheduler {
 
   @Scheduled(cron = "1 * * * * ?")
   public void notifyUser() {
+    Set<User> notifiedAlreadySet = new HashSet<>();
     for (User usr : USER_NOTIFY_SET) {
       for (Map.Entry<Currency, Boolean> entry : usr.getCurrencyNotifyMap().entrySet()) {
         String currencySymbol = entry.getKey().getSymbol();
         Currency currentCurrency = ACTUAL_CURRENCY_MAP.get(currencySymbol);
         if (ACTUAL_CURRENCY_MAP.containsKey(currencySymbol)) {
           double percentDif = currentCurrency.getPriceUsd() / entry.getKey().getPriceUsd();
-          if (Boolean.TRUE.equals(
-                  !entry.getValue() && currentCurrency.getId().equals(entry.getKey().getId()))
-              && (percentDif >= 1.01 || percentDif <= 0.99)) {
+          if (percentDif >= 1.01 || percentDif <= 0.99) {
             log.warn(
                 usr.getUsername()
                     + " "
                     + entry.getKey().getSymbol()
                     + " "
                     + new DecimalFormat("#.###").format(percentDif * 100 - 100));
-            entry.setValue(true);
+            usr.getCurrencyNotifyMap().remove(entry.getKey());
           }
         }
       }
+      if (usr.getCurrencyNotifyMap().isEmpty()) {
+        notifiedAlreadySet.add(usr);
+      }
+      USER_NOTIFY_SET.removeAll(notifiedAlreadySet);
     }
-  }
-
-  @Scheduled(cron = "2 * * * * ?")
-  public void removeNotifiedUsersFromSet() {
-    Set<User> notifiedAlreadySet = new HashSet<>();
-    for (User usr : USER_NOTIFY_SET) {
-      usr.getCurrencyNotifyMap().entrySet().removeIf(entry -> entry.getValue().equals(true));
-    }
-    USER_NOTIFY_SET.forEach(
-        user -> {
-          if (user.getCurrencyNotifyMap().isEmpty()) {
-            notifiedAlreadySet.add(user);
-          }
-        });
-    USER_NOTIFY_SET.removeAll(notifiedAlreadySet);
   }
 }
