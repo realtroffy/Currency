@@ -8,6 +8,7 @@ import com.idf.currency.service.CurrencyService;
 import com.idf.currency.service.NotifyService;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Map;
 import java.util.Set;
@@ -26,6 +27,7 @@ public class NotifyServiceImpl implements NotifyService {
   private final CurrencyService currencyService;
 
   @Override
+  @Transactional
   public void addToNotifyList(String username, String symbol) {
     Currency currency = getCurrencyFromActualSet(symbol);
     User user =

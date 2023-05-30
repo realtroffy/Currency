@@ -7,6 +7,7 @@ import com.idf.currency.service.CurrencyService;
 import com.idf.currency.service.WebClientService;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Map;
@@ -19,10 +20,11 @@ public class CurrencyServiceImpl implements CurrencyService {
   public static final String BODY_NULL_EXCEPTION_MESSAGE = "Array of currencies is null";
   public static final Map<String, Currency> ACTUAL_CURRENCY_MAP = new ConcurrentHashMap<>();
 
-  private final CurrencyRepository repository;
+  private final CurrencyRepository currencyRepository;
   private final WebClientService<?> webClientService;
 
   @Override
+  @Transactional
   public void saveCurrencyAsync() {
     webClientService.getResponse().subscribe(currency -> save((Currency) currency));
   }
@@ -34,7 +36,11 @@ public class CurrencyServiceImpl implements CurrencyService {
     if (currenciesFromUrl == null) {
       throw new BodyNullException(BODY_NULL_EXCEPTION_MESSAGE);
     } else {
-      currenciesFromUrl.forEach(e -> ACTUAL_CURRENCY_MAP.put(e.getSymbol(), e));
+      currenciesFromUrl.forEach(
+          e -> {
+            ACTUAL_CURRENCY_MAP.put(e.getSymbol(), e);
+            currencyRepository.save(e);
+          });
     }
   }
 
@@ -42,7 +48,7 @@ public class CurrencyServiceImpl implements CurrencyService {
     if (currency == null) {
       throw new BodyNullException(BODY_NULL_EXCEPTION_MESSAGE);
     } else {
-      repository.save(currency);
+      currencyRepository.save(currency);
       ACTUAL_CURRENCY_MAP.put(currency.getSymbol(), currency);
     }
   }
