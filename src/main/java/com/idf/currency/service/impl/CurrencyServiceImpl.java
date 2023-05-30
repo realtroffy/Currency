@@ -30,17 +30,14 @@ public class CurrencyServiceImpl implements CurrencyService {
   }
 
   @Override
+  @Transactional
   public void saveCurrencySync() {
     List<Currency> currenciesFromUrl =
         (List<Currency>) webClientService.getResponse().collectList().block();
     if (currenciesFromUrl == null) {
       throw new BodyNullException(BODY_NULL_EXCEPTION_MESSAGE);
     } else {
-      currenciesFromUrl.forEach(
-          e -> {
-            ACTUAL_CURRENCY_MAP.put(e.getSymbol(), e);
-            currencyRepository.save(e);
-          });
+      currenciesFromUrl.forEach(this::save);
     }
   }
 
