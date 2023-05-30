@@ -9,6 +9,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Flux;
+import reactor.util.retry.Retry;
 
 import java.time.Duration;
 
@@ -42,6 +43,6 @@ public class WebClientCoinLoreimpl implements WebClientService<Currency> {
             HttpStatus::is5xxServerError,
             error -> error(new ServerUnavailableException(SERVER_UNAVAILABLE_EXCEPTION_MESSAGE)))
         .bodyToFlux(Currency.class)
-        .timeout(Duration.ofMinutes(3));
+        .retryWhen(Retry.fixedDelay(3, Duration.ofMinutes(2)));
   }
 }
