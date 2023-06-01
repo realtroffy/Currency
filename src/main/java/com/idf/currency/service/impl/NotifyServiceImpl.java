@@ -34,7 +34,7 @@ public class NotifyServiceImpl implements NotifyService {
         USER_NOTIFY_SET.stream()
             .filter(usr -> usr.getUsername().equals(username))
             .findFirst()
-            .orElse(createUser(username, currency));
+            .orElseGet(()->createUser(username, currency));
     user.getCurrencyNotifyMap().put(currency, false);
     USER_NOTIFY_SET.add(user);
   }
