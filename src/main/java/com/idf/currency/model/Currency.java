@@ -7,11 +7,11 @@ import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.mapping.Document;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.Table;
 import java.io.Serializable;
+import java.time.LocalDateTime;
 import java.util.Objects;
 
 @Getter
@@ -19,25 +19,23 @@ import java.util.Objects;
 @ToString
 @RequiredArgsConstructor
 @AllArgsConstructor
-@Entity
-@Table(name = "CURRENCY")
+@Document(collection = "currency")
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class Currency implements Serializable {
 
   private static final long serialVersionUID = 4900493878723528744L;
 
-  @javax.persistence.Id
-  @Column(name = "ID")
+  @Id
   @JsonProperty("id")
   private Long id;
 
-  @Column(name = "SYMBOL")
   @JsonProperty("symbol")
   private String symbol;
 
-  @Column(name = "PRICE_USD")
   @JsonProperty("price_usd")
   private double priceUsd;
+
+  private LocalDateTime time;
 
   @Override
   public boolean equals(Object o) {

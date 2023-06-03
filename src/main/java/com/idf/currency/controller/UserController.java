@@ -28,7 +28,7 @@ public class UserController {
   @GetMapping("/{username}/{symbol}")
   public ResponseEntity<String> notifyUser(
       @PathVariable @Size(min = 3, max = 20, message = BAD_USER_NAME_MESSAGE) String username,
-      @Size(min = 3, message = BAD_SYMBOL_MESSAGE) @PathVariable String symbol) {
+      @PathVariable @Size(min = 3, message = BAD_SYMBOL_MESSAGE) String symbol) {
     if (!validationService.isValidCurrencyName(symbol)) {
       return new ResponseEntity<>(
           "No such currency: " + symbol + ". " + BAD_SYMBOL_MESSAGE, HttpStatus.BAD_REQUEST);

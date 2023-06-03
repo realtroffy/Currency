@@ -5,13 +5,14 @@ import com.idf.currency.model.User;
 import com.idf.currency.service.CurrencyService;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 import java.text.DecimalFormat;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
 
 import static com.idf.currency.service.impl.CurrencyServiceImpl.ACTUAL_CURRENCY_MAP;
 import static com.idf.currency.service.impl.NotifyServiceImpl.USER_NOTIFY_SET;
@@ -22,6 +23,7 @@ import static com.idf.currency.service.impl.NotifyServiceImpl.USER_NOTIFY_SET;
 public class Scheduler {
 
   private final CurrencyService currencyService;
+  private final MongoTemplate mongoTemplate;
 
   @Scheduled(cron = "0 * * * * ?")
   public void updateCurrencyFromSource() {
@@ -30,28 +32,31 @@ public class Scheduler {
 
   @Scheduled(cron = "1 * * * * ?")
   public void notifyUser() {
-    Set<User> notifiedAlreadySet = new HashSet<>();
+    List<User> notifiedAlreadyList = new ArrayList<>();
     for (User usr : USER_NOTIFY_SET) {
-      for (Map.Entry<Currency, Boolean> entry : usr.getCurrencyNotifyMap().entrySet()) {
-        String currencySymbol = entry.getKey().getSymbol();
+      Iterator<Currency> iterator = usr.getCurrencyNotifyList().listIterator();
+      while (iterator.hasNext()) {
+        Currency next = iterator.next();
+        String currencySymbol = next.getSymbol();
         Currency currentCurrency = ACTUAL_CURRENCY_MAP.get(currencySymbol);
         if (ACTUAL_CURRENCY_MAP.containsKey(currencySymbol)) {
-          double percentDif = currentCurrency.getPriceUsd() / entry.getKey().getPriceUsd();
+          double percentDif = currentCurrency.getPriceUsd() / next.getPriceUsd();
           if (percentDif >= 1.01 || percentDif <= 0.99) {
             log.warn(
                 usr.getUsername()
                     + " "
-                    + entry.getKey().getSymbol()
+                    + next.getSymbol()
                     + " "
                     + new DecimalFormat("#.###").format(percentDif * 100 - 100));
-            usr.getCurrencyNotifyMap().remove(entry.getKey());
+            iterator.remove();
           }
         }
       }
-      if (usr.getCurrencyNotifyMap().isEmpty()) {
-        notifiedAlreadySet.add(usr);
+      if (usr.getCurrencyNotifyList().isEmpty()) {
+        notifiedAlreadyList.add(usr);
       }
-      USER_NOTIFY_SET.removeAll(notifiedAlreadySet);
+      USER_NOTIFY_SET.removeAll(notifiedAlreadyList);
+      USER_NOTIFY_SET.forEach(mongoTemplate::save);
     }
   }
 }
