@@ -3,11 +3,13 @@ package com.idf.currency.controller;
 import com.idf.currency.service.NotifyService;
 import com.idf.currency.service.ValidationService;
 import lombok.AllArgsConstructor;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -27,8 +29,13 @@ public class UserController {
 
   @GetMapping("/{username}/{symbol}")
   public ResponseEntity<String> notifyUser(
+      @RequestHeader(HttpHeaders.AUTHORIZATION) String authorizationHeader,
       @PathVariable @Size(min = 3, max = 20, message = BAD_USER_NAME_MESSAGE) String username,
       @PathVariable @Size(min = 3, message = BAD_SYMBOL_MESSAGE) String symbol) {
+    if (!validationService.isTokenConsistUsernameFromUrl(username, authorizationHeader)) {
+      return new ResponseEntity<>(
+          "Username from token doesn't match from URL", HttpStatus.BAD_REQUEST);
+    }
     if (!validationService.isValidCurrencyName(symbol)) {
       return new ResponseEntity<>(
           "No such currency: " + symbol + ". " + BAD_SYMBOL_MESSAGE, HttpStatus.BAD_REQUEST);

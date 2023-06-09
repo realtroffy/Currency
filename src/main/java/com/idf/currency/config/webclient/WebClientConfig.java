@@ -1,4 +1,4 @@
-package com.idf.currency.config;
+package com.idf.currency.config.webclient;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

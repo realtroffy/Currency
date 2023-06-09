@@ -6,6 +6,8 @@ import com.idf.currency.service.CurrencyService;
 import com.idf.currency.service.WebClientService;
 import lombok.AllArgsConstructor;
 import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -40,6 +42,13 @@ public class CurrencyServiceImpl implements CurrencyService {
     } else {
       currenciesFromUrl.forEach(this::save);
     }
+  }
+
+  @Override
+  public Currency getCurrencyBySymbol(String symbol) {
+    Query query = new Query();
+    query.addCriteria(Criteria.where("symbol").is(symbol));
+    return mongoTemplate.findOne(query, Currency.class);
   }
 
   private void save(Currency currency) {

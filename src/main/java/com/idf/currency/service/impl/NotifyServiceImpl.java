@@ -4,18 +4,14 @@ import com.idf.currency.model.Currency;
 import com.idf.currency.model.User;
 import com.idf.currency.service.CurrencyService;
 import com.idf.currency.service.NotifyService;
+import com.idf.currency.service.UserService;
 import lombok.AllArgsConstructor;
-import org.springframework.data.mongodb.core.MongoTemplate;
-import org.springframework.data.mongodb.core.query.Criteria;
-import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.PostConstruct;
-import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CopyOnWriteArrayList;
 
 import static com.idf.currency.service.impl.CurrencyServiceImpl.ACTUAL_CURRENCY_MAP;
 
@@ -26,18 +22,15 @@ public class NotifyServiceImpl implements NotifyService {
   public static final Set<User> USER_NOTIFY_SET = ConcurrentHashMap.newKeySet();
 
   private final CurrencyService currencyService;
-  private final MongoTemplate mongoTemplate;
+  private final UserService userService;
 
   @PostConstruct
-  public void getNotNotifiedUserFromDB(){
-    Query query = new Query();
-    query.addCriteria(Criteria.where("currencyNotifyList").exists(true));
-    List<User> notNotifiedUsers = mongoTemplate.find(query, User.class);
-    USER_NOTIFY_SET.addAll(notNotifiedUsers);
+  public void getNotNotifiedUserFromDB() {
+    USER_NOTIFY_SET.addAll(userService.getNotNotifiedUserFromDB());
   }
 
   @PostConstruct
-  public void updateCurrency(){
+  public void updateCurrency() {
     currencyService.saveCurrencySync();
   }
 
@@ -49,7 +42,7 @@ public class NotifyServiceImpl implements NotifyService {
         USER_NOTIFY_SET.stream()
             .filter(usr -> usr.getUsername().equals(username))
             .findFirst()
-            .orElseGet(() -> createUser(username, currency));
+            .orElseGet(() -> userService.findByUsername(username));
 
     if (user.getCurrencyNotifyList().stream()
         .noneMatch(e -> e.getSymbol().equals(currency.getSymbol()))) {
@@ -66,7 +59,7 @@ public class NotifyServiceImpl implements NotifyService {
               });
     }
     USER_NOTIFY_SET.add(user);
-    mongoTemplate.save(user);
+    userService.update(user);
   }
 
   private Currency getCurrencyFromActualSet(String symbol) {
@@ -76,15 +69,8 @@ public class NotifyServiceImpl implements NotifyService {
         .orElseGet(() -> getCurrencyFromDB(symbol));
   }
 
-  private Currency getCurrencyFromDB(String symbol) {
-    Query query = new Query();
-    query.addCriteria(Criteria.where("symbol").is(symbol));
-    return mongoTemplate.findOne(query, Currency.class);
-  }
 
-  private User createUser(String username, Currency currency) {
-    List<Currency> currencyList = new CopyOnWriteArrayList<>();
-    currencyList.add(currency);
-    return new User(username, currencyList);
+  private Currency getCurrencyFromDB(String symbol) {
+    return currencyService.getCurrencyBySymbol(symbol);
   }
 }

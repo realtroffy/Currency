@@ -2,6 +2,7 @@ package com.idf.currency.model;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
 import org.springframework.data.annotation.Id;
@@ -13,12 +14,20 @@ import java.util.Objects;
 @Getter
 @Setter
 @ToString
+@NoArgsConstructor
 @AllArgsConstructor
 @Document(collection = "users")
 public class User {
 
+  public User(String username, List<Currency> currencyNotifyList) {
+    this.username = username;
+    this.currencyNotifyList = currencyNotifyList;
+  }
+
   @Id
   private String username;
+  private String password;
+  private String email;
   private List<Currency> currencyNotifyList;
 
   @Override

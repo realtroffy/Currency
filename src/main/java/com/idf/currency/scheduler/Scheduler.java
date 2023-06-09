@@ -3,9 +3,9 @@ package com.idf.currency.scheduler;
 import com.idf.currency.model.Currency;
 import com.idf.currency.model.User;
 import com.idf.currency.service.CurrencyService;
+import com.idf.currency.service.UserService;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
@@ -23,7 +23,7 @@ import static com.idf.currency.service.impl.NotifyServiceImpl.USER_NOTIFY_SET;
 public class Scheduler {
 
   private final CurrencyService currencyService;
-  private final MongoTemplate mongoTemplate;
+  private final UserService userService;
 
   @Scheduled(cron = "0 * * * * ?")
   public void updateCurrencyFromSource() {
@@ -55,8 +55,8 @@ public class Scheduler {
       if (usr.getCurrencyNotifyList().isEmpty()) {
         notifiedAlreadyList.add(usr);
       }
+      USER_NOTIFY_SET.forEach(userService::update);
       USER_NOTIFY_SET.removeAll(notifiedAlreadyList);
-      USER_NOTIFY_SET.forEach(mongoTemplate::save);
     }
   }
 }
