@@ -1,0 +1,22 @@
+version: '3.8'
+services:
+  api_service:
+    build: .
+    container_name: app_currency
+    ports:
+      - "8080:8080"
+    depends_on:
+      - db
+
+  db:
+    image: 'mongo'
+    restart: always
+    ports:
+      - "27018:27017"
+    container_name: database_mongo
+    volumes:
+      - mongo_volume:/data/db
+
+volumes:
+  mongo_volume:
+

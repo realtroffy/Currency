@@ -42,11 +42,6 @@
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-mail</artifactId>
 		</dependency>
-		<!-- https://mvnrepository.com/artifact/org.springframework.boot/spring-boot-starter-cache -->
-		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-cache</artifactId>
-		</dependency>
 
 		<!-- https://mvnrepository.com/artifact/io.jsonwebtoken/jjwt -->
 
@@ -78,6 +73,7 @@
 	</dependencies>
 
 	<build>
+		<finalName>currency</finalName>
 		<plugins>
 			<plugin>
 				<groupId>org.springframework.boot</groupId>

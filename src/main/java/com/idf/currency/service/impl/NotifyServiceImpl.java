@@ -10,8 +10,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.PostConstruct;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import static com.idf.currency.service.impl.CurrencyServiceImpl.ACTUAL_CURRENCY_MAP;
 
@@ -44,6 +46,11 @@ public class NotifyServiceImpl implements NotifyService {
             .findFirst()
             .orElseGet(() -> userService.findByUsername(username));
 
+    if (user == null) {
+      user = createUser(username, currency);
+      userService.update(user);
+    }
+
     if (user.getCurrencyNotifyList().stream()
         .noneMatch(e -> e.getSymbol().equals(currency.getSymbol()))) {
       user.getCurrencyNotifyList().add(currency);
@@ -69,8 +76,13 @@ public class NotifyServiceImpl implements NotifyService {
         .orElseGet(() -> getCurrencyFromDB(symbol));
   }
 
-
   private Currency getCurrencyFromDB(String symbol) {
     return currencyService.getCurrencyBySymbol(symbol);
+  }
+
+  private User createUser(String username, Currency currency) {
+    List<Currency> currencyList = new CopyOnWriteArrayList<>();
+    currencyList.add(currency);
+    return new User(username, currencyList);
   }
 }
